@@ -1,5 +1,9 @@
 import requests
 import sys
+from colorama import Fore, Style, init
+
+# Initialize colorama for colorized output
+init(autoreset=True)
 
 # Function to check the status code of each subdomain
 def check_subdomains(file_path):
@@ -11,18 +15,26 @@ def check_subdomains(file_path):
             subdomain = subdomain.strip()  # Removing newline characters
             if subdomain:  # If the line is not empty
                 try:
-                    # Adding timeout and disabling SSL verification
                     response = requests.get(f"http://{subdomain}", timeout=5, verify=False)
-                    print(f"[{response.status_code}] - {subdomain}")
-                except requests.exceptions.SSLError as ssl_err:
-                    print(f"[SSL ERROR] - {subdomain} ({ssl_err})")
-                except requests.exceptions.Timeout as timeout_err:
-                    print(f"[TIMEOUT] - {subdomain} ({timeout_err})")
-                except requests.exceptions.RequestException as e:
-                    print(f"[ERROR] - {subdomain} ({e})")
+                    status_code = response.status_code
+
+                    if status_code == 200:
+                        print(f"{Fore.GREEN}[{status_code}] - {subdomain}")
+                    elif status_code == 403:
+                        print(f"{Fore.RED}[{status_code}] - {subdomain}")
+                    elif status_code == 404:
+                        print(f"{Fore.WHITE}[{status_code}] - {subdomain}")
+                    else:
+                        print(f"{Fore.WHITE}[{status_code}] - {subdomain}")
+                
+                except requests.exceptions.Timeout:
+                    print(f"{Fore.WHITE}[TIMEOUT] - {subdomain}")
+                except requests.exceptions.RequestException:
+                    print(f"{Fore.WHITE}[CONNECTION ERROR] - {subdomain}")
+    
     except FileNotFoundError:
         print(f"File '{file_path}' not found.")
-        
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python check_http.py -l <subdomains.txt>")
