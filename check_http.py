@@ -11,8 +11,13 @@ def check_subdomains(file_path):
             subdomain = subdomain.strip()  # Removing newline characters
             if subdomain:  # If the line is not empty
                 try:
-                    response = requests.get(f"http://{subdomain}")
+                    # Adding timeout and disabling SSL verification
+                    response = requests.get(f"http://{subdomain}", timeout=5, verify=False)
                     print(f"[{response.status_code}] - {subdomain}")
+                except requests.exceptions.SSLError as ssl_err:
+                    print(f"[SSL ERROR] - {subdomain} ({ssl_err})")
+                except requests.exceptions.Timeout as timeout_err:
+                    print(f"[TIMEOUT] - {subdomain} ({timeout_err})")
                 except requests.exceptions.RequestException as e:
                     print(f"[ERROR] - {subdomain} ({e})")
     except FileNotFoundError:
@@ -20,6 +25,6 @@ def check_subdomains(file_path):
         
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python http.py -l <subdomains.txt>")
+        print("Usage: python check_http.py -l <subdomains.txt>")
     elif sys.argv[1] == "-l":
         check_subdomains(sys.argv[2])
