@@ -1,9 +1,14 @@
 import requests
 import sys
 from colorama import Fore, Style, init
+import urllib3
+from requests.exceptions import Timeout, RequestException
 
 # Initialize colorama for colorized output
 init(autoreset=True)
+
+# Suppress SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Function to check the status code of each subdomain
 def check_subdomains(file_path):
@@ -15,7 +20,7 @@ def check_subdomains(file_path):
             subdomain = subdomain.strip()  # Removing newline characters
             if subdomain:  # If the line is not empty
                 try:
-                    response = requests.get(f"http://{subdomain}", timeout=5, verify=False)
+                    response = requests.get(f"http://{subdomain}", timeout=10, verify=False)
                     status_code = response.status_code
 
                     if status_code == 200:
@@ -27,9 +32,9 @@ def check_subdomains(file_path):
                     else:
                         print(f"{Fore.WHITE}[{status_code}] - {subdomain}")
                 
-                except requests.exceptions.Timeout:
+                except Timeout:
                     print(f"{Fore.WHITE}[TIMEOUT] - {subdomain}")
-                except requests.exceptions.RequestException:
+                except RequestException as e:
                     print(f"{Fore.WHITE}[CONNECTION ERROR] - {subdomain}")
     
     except FileNotFoundError:
