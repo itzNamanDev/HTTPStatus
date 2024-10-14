@@ -1,6 +1,10 @@
 import requests
 import sys
+import warnings
 from colorama import init, Fore, Style
+
+# Suppress InsecureRequestWarning
+warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 # Initialize colorama
 init(autoreset=True)
@@ -25,7 +29,7 @@ def check_subdomains(subdomain_file):
             else:
                 print(Fore.WHITE + f"[{response.status_code}] - {subdomain}")
         except requests.exceptions.Timeout:
-            print(Fore.WHITE + "[TIMEOUT] - " + subdomain)
+            print(Fore.BLUE + "[TIMEOUT] - " + subdomain)
         except requests.exceptions.ConnectionError:
             print(Fore.WHITE + "[CONNECTION ERROR] - " + subdomain)
         except Exception as e:
