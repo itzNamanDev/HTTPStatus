@@ -1,47 +1,38 @@
 import requests
 import sys
-from colorama import Fore, Style, init
-import urllib3
-from requests.exceptions import Timeout, RequestException
+from colorama import init, Fore, Style
 
-# Initialize colorama for colorized output
+# Initialize colorama
 init(autoreset=True)
 
-# Suppress SSL warnings
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+def check_subdomains(subdomain_file):
+    with open(subdomain_file, 'r') as f:
+        subdomains = f.read().splitlines()
 
-# Function to check the status code of each subdomain
-def check_subdomains(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            subdomains = file.readlines()
-            
-        for subdomain in subdomains:
-            subdomain = subdomain.strip()  # Removing newline characters
-            if subdomain:  # If the line is not empty
-                try:
-                    response = requests.get(f"http://{subdomain}", timeout=10, verify=False)
-                    status_code = response.status_code
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+    }
 
-                    if status_code == 200:
-                        print(f"{Fore.GREEN}[{status_code}] - {subdomain}")
-                    elif status_code == 403:
-                        print(f"{Fore.RED}[{status_code}] - {subdomain}")
-                    elif status_code == 404:
-                        print(f"{Fore.WHITE}[{status_code}] - {subdomain}")
-                    else:
-                        print(f"{Fore.WHITE}[{status_code}] - {subdomain}")
-                
-                except Timeout:
-                    print(f"{Fore.WHITE}[TIMEOUT] - {subdomain}")
-                except RequestException as e:
-                    print(f"{Fore.WHITE}[CONNECTION ERROR] - {subdomain}")
-    
-    except FileNotFoundError:
-        print(f"File '{file_path}' not found.")
+    for subdomain in subdomains:
+        try:
+            response = requests.get(f"https://{subdomain}", timeout=10, headers=headers, verify=False)
+            if response.status_code == 200:
+                print(Fore.GREEN + "[200] - " + subdomain)
+            elif response.status_code == 403:
+                print(Fore.RED + "[403] - " + subdomain)
+            elif response.status_code == 404:
+                print(Fore.WHITE + "[404] - " + subdomain)
+            else:
+                print(Fore.WHITE + f"[{response.status_code}] - {subdomain}")
+        except requests.exceptions.Timeout:
+            print(Fore.WHITE + "[TIMEOUT] - " + subdomain)
+        except requests.exceptions.ConnectionError:
+            print(Fore.WHITE + "[CONNECTION ERROR] - " + subdomain)
+        except Exception as e:
+            print(Fore.WHITE + f"[ERROR] - {subdomain}: {str(e)}")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python check_http.py -l <subdomains.txt>")
-    elif sys.argv[1] == "-l":
-        check_subdomains(sys.argv[2])
+    if len(sys.argv) != 3 or sys.argv[1] != '-l':
+        print("Usage: python3 check_http.py -l <subdomains_file>")
+        sys.exit(1)
+    check_subdomains(sys.argv[2])
